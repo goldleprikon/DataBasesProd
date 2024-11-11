@@ -59,7 +59,7 @@ where date('2024-11-11') - HireDate > 18
 
 10) -------------------------------------------
 
-select Title
+select distinct Title
 from employees
 order by Title ASC
 
