@@ -1,0 +1,112 @@
+1) ///////////////////////////////////////
+
+SELECT sum(sales_items.UnitPrice * sales_items.Quantity)
+FROM sales JOIN sales_items
+ON sales.SalesId = sales_items.SalesId
+WHERE sales.ShipCountry = "USA" AND sales.SalesDate > date('2011-12-31') AND sales.SalesDate < date('2012-04-01');
+
+   ///////////////////////////////////////
+
+SELECT sum(sales_items.UnitPrice * sales_items.Quantity)
+FROM sales_items
+WHERE (sales_items.SalesId IN 
+    (
+    SELECT sales.SalesId FROM sales
+    where sales.shipCountry = "USA" AND sales.SalesDate > date('2011-12-31') AND sales.SalesDate < date('2012-04-01') AND sales.SalesId IN 
+        (
+        SELECT sales_items.SalesId FROM sales_items
+        WHERE sales.SalesId = sales_items.SalesId
+        )
+    )
+)
+
+
+2) ///////////////////////////////////////
+
+SELECT FirstName
+FROM customers 
+WHERE customers.FirstName NOT IN (
+    SELECT employees.FirstName
+    FROM customers JOIN employees
+    WHERE customers.FirstName = employees.FirstName
+)
+GROUP BY customers.FirstName
+
+   ///////////////////////////////////////
+
+SELECT customers.FirstName
+FROM customers
+EXCEPT 
+SELECT employees.FirstName
+FROM employees
+
+   ///////////////////////////////////////
+
+SELECT customers.FirstName
+FROM customers
+WHERE (customers.FirstName NOT IN(
+    SELECT employees.FirstName
+    FROM employees)
+)
+GROUP BY customers.FirstName
+
+3) ///////////////////////////////////////
+
+Запросы вернут разный результат( могут совпасть если все строки, если 1. = 2.).
+1. Вернет удовлетворяющие условию T1.column1=0
+2. Вернет все строки из t1
+
+4) ///////////////////////////////////////
+
+SELECT albums.Title, count(*) AS CountOfTracks
+FROM albums LEFT JOIN tracks
+    ON albums.AlbumId = tracks.AlbumId
+GROUP BY albums.Title
+
+   ///////////////////////////////////////
+
+SELECT Title, (SELECT count(*)
+       FROM tracks
+       WHERE tracks.AlbumId = albums.AlbumId
+       GROUP BY tracks.AlbumId) AS CountOfTracks
+FROM albums
+GROUP BY albums.Title
+
+5) ///////////////////////////////////////
+
+SELECT customers.LastName, customers.FirstName
+FROM customers INNER JOIN sales
+    ON sales.CustomerId = customers.CustomerId
+WHERE customers.Country = "Germany" AND sales.ShipCity = "Berlin" AND date(sales.SalesDate) >= date('2009-01-01') AND date(sales.SalesDate) <= date('2009-12-31')
+
+6) ///////////////////////////////////////
+
+SELECT LastName
+FROM customers, sales, sales_items
+WHERE customers.CustomerId = sales.CustomerId AND sales.SalesId = sales_items.SalesId
+GROUP BY customers.CustomerId
+HAVING sum(sales_items.Quantity) > 30
+
+   ///////////////////////////////////////
+
+SELECT FirstName, LastName 
+FROM (SELECT FirstName, LastName,
+     (SELECT count(*) FROM sales_items INNER JOIN sales ON sales.SalesId = sales_items.SalesId AND sales.CustomerId = customers.CustomerId) 
+     AS count FROM customers WHERE count > 30
+ )
+
+7) ///////////////////////////////////////
+
+SELECT genres.Name, AVG(tracks.UnitPrice) AS average_price
+FROM genres CROSS JOIN tracks
+    ON genres.GenreId = tracks.GenreId
+GROUP BY genres.GenreId
+
+8) ///////////////////////////////////////
+
+SELECT genres.Name
+FROM genres CROSS JOIN tracks
+    ON genres.GenreId = tracks.GenreId
+GROUP BY genres.GenreId 
+HAVING AVG(tracks.UnitPrice) > 1
+
