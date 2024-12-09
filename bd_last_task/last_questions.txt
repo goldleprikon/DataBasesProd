@@ -1,0 +1,78 @@
+0) чистка( при внесении в таблицу, стремное превращал в -1)
+
+DELETE FROM log
+WHERE user_id = -1;
+
+DELETE FROM users
+WHERE user_id = -1;
+
+//-----------------------------------------------------------
+a)
+
+SELECT user_id, count(distinct time) AS number_of_visits_to_bet
+FROM LOG
+GROUP BY user_id
+
+//-----------------------------------------------------------
+b)
+
+SELECT
+    user_id,
+    100.0 * avg(win*bet)/avg(bet) AS avg_win_percentage
+FROM LOG
+GROUP BY user_id
+
+//-----------------------------------------------------------
+c)
+
+SELECT
+    user_id,
+    sum(win*bet) AS balance
+FROM LOG
+GROUP BY user_id
+
+
+//-----------------------------------------------------------
+d) 
+
+SELECT
+    users.geo AS city,
+    sum(log.win * log.bet) AS total_profit,
+    sum(log.bet) AS total_bet,
+    sum(log.win * log.bet) / sum(LOG.bet) AS profitability_ratio
+FROM LOG
+INNER JOIN users ON log.user_id = users.user_id and users.geo != ""
+GROUP BY users.geo
+ORDER BY profitability_ratio DESC
+
+//-----------------------------------------------------------
+e) 
+
+SELECT
+    users.geo AS city,
+    avg(log.bet) AS avg_bet
+FROM log
+INNER JOIN users on log.user_id = users.user_id and users.geo != ""
+GROUP BY users.geo
+ORDER BY avg_bet DESC
+
+//-----------------------------------------------------------
+f)
+
+SELECT avg(avg_value.average_time_first_bet) AS Average_time FROM(
+	WITH first_visit AS (
+		SELECT user_id, min(time) AS first_visit_time
+		FROM log
+		GROUP BY user_id
+	),
+	first_bet AS (
+		SELECT user_id, min(time) AS first_bet_time
+		FROM log
+		WHERE bet != 0.0
+		GROUP BY user_id
+	)
+	SELECT avg(julianday(first_bet_time) - julianday(first_visit_time)) AS average_time_first_bet
+	FROM first_bet
+	JOIN first_visit ON first_visit.user_id = first_bet.user_id) AS avg_value
+
+//-----------------------------------------------------------
